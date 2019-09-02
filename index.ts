@@ -1,9 +1,16 @@
 import * as Jimp from "jimp";
 import * as glob from "glob";
-import { getCharacter, getCharacterFromImg } from "./lib/character_conversion";
+import { getCharacterFromImg } from "./lib/character_conversion";
 import { Noctis } from "noctis-starmap";
+import * as vega from "vega";
+import * as vegaLite from "vega-lite";
+import { createWriteStream, fstat, mkdirSync } from "fs";
 
 const Starmap = new Noctis("./data/starmap2.bin", "./data/guide.bin");
+
+try {
+  mkdirSync("analysis");
+} catch (e) {}
 
 let images = glob.sync("./out/**/*.png").concat(glob.sync("./out/**/*.gif"));
 console.log(`Found ${images.length} images`);
@@ -120,31 +127,47 @@ Promise.all(promises)
         }
       }
     });
-    console.log(
-      JSON.stringify({
-        $schema: "https://vega.github.io/schema/vega-lite/v4.json",
-        description: "A simple bar chart with embedded data.",
-        title:
-          "Number of pictures uploaded to 0x44.com per solar system in the Noctis universe",
-        data: {
-          values: Array.from(OccuranceMap.entries()).map(
-            ([starname, pictures]) => {
-              return { starname, pictures };
-            }
-          )
+    const VegaData = {
+      $schema: "https://vega.github.io/schema/vega-lite/v4.json",
+      description: "A simple bar chart with embedded data.",
+      title:
+        "Number of pictures uploaded to 0x44.com per solar system in the Noctis universe",
+      data: {
+        values: Array.from(OccuranceMap.entries()).map(
+          ([starname, pictures]) => {
+            const retval = {
+              starname: starname,
+              pictures: pictures
+            };
+            return retval;
+          }
+        )
+      },
+      background: "white",
+      mark: "bar",
+      encoding: {
+        x: {
+          field: "starname",
+          type: "ordinal",
+          title: "Solar system (star name)",
+          sort: "-y"
         },
-        background: "white",
-        mark: "bar",
-        encoding: {
-          x: {
-            field: "starname",
-            type: "ordinal",
-            title: "Solar system (star name)",
-            sort: "-y"
-          },
-          y: { field: "pictures", type: "quantitative" }
-        }
-      })
-    );
+        y: { field: "pictures", type: "quantitative" }
+      }
+    };
+    var view = new vega.View(
+      vega.parse(vegaLite.compile(VegaData as any, { config: {} }).spec)
+    )
+      .renderer("canvas")
+      .initialize();
+
+    // generate static PNG file from chart
+    return view.toCanvas().then(function(canvas: any) {
+      const out = createWriteStream(
+        __dirname + "/analysis/pictures_starnames_histogram.png"
+      );
+      const stream = canvas.createPNGStream();
+      stream.pipe(out);
+    });
   })
   .catch(console.error);

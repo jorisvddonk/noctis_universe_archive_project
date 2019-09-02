@@ -10,9 +10,13 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@types/node": "^12.7.3",
+    "canvas": "^2.6.0",
     "glob": "^7.1.4",
     "jimp": "^0.6.4",
     "noctis-starmap": "^1.0.2",
-    "typescript": "^3.6.2"
+    "typescript": "^3.6.2",
+    "vega": "^5.5.3",
+    "vega-lite": "^4.0.0-beta.1"
   }
 }
