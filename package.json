@@ -1,0 +1,17 @@
+{
+  "name": "noctis_universe_archive_project",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "glob": "^7.1.4",
+    "jimp": "^0.6.4",
+    "typescript": "^3.6.2"
+  }
+}
