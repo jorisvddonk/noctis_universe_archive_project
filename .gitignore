@@ -2,3 +2,5 @@ cdisk*.txt
 aria2*.urls
 out/
 node_modules
+data/guide.bin
+data/starmap2.bin

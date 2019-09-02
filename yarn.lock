@@ -447,6 +447,10 @@ mkdirp@0.5.1:
   dependencies:
     minimist "0.0.8"
 
+noctis-starmap@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/noctis-starmap/-/noctis-starmap-1.0.2.tgz#157fd8a41dc03f38844fafaff2db228339105e8d"
+
 object-keys@^1.0.12:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/object-keys/-/object-keys-1.1.1.tgz#1c47f272df277f3b1daf061677d9c82e2322c60e"

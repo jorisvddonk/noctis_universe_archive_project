@@ -12,6 +12,7 @@
   "dependencies": {
     "glob": "^7.1.4",
     "jimp": "^0.6.4",
+    "noctis-starmap": "^1.0.2",
     "typescript": "^3.6.2"
   }
 }
