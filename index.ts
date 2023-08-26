@@ -1,6 +1,6 @@
 import * as Jimp from "jimp";
 import * as glob from "glob";
-import { getCharacterFromImg } from "./lib/character_conversion";
+import { getCharacterFromImg, charmap, ASCII_TO_ARRAY } from "./lib/character_conversion";
 import { Noctis } from "noctis-starmap";
 import * as vega from "vega";
 import * as vegaLite from "vega-lite";
@@ -9,165 +9,22 @@ import { createWriteStream, fstat, mkdirSync } from "fs";
 const Starmap = new Noctis("./data/starmap2.bin", "./data/guide.bin");
 
 try {
-  mkdirSync("analysis");
-} catch (e) {}
+  mkdirSync("charmap_export");
+} catch (e) { }
 
-let images = glob.sync("./out/**/*.png").concat(glob.sync("./out/**/*.gif"));
-console.log(`Found ${images.length} images`);
-//images = images.slice(0, 1000);
-
-interface ImageSearchResult {
-  imagePath: Jimp;
-  parsisLine: Jimp;
-  image: Jimp;
-  numColors: number;
-  dark: number;
-  light: number;
-}
-
-const promises: Promise<ImageSearchResult>[] = images.map<
-  Promise<ImageSearchResult>
->(imagePath => {
-  return Jimp.read(imagePath)
-    .then((j: Jimp) => {
-      const img = j
-        .clone()
-        .crop(
-          (j.bitmap.width / 320) * 3,
-          (j.bitmap.height / 200) * 192,
-          (j.bitmap.width / 320) * 314,
-          (j.bitmap.height / 200) * 5
-        )
-        .greyscale();
-
-      const hgram = new Array(256).fill(0);
-      img.scanQuiet(0, 0, img.bitmap.width, img.bitmap.height, function(
-        x,
-        y,
-        index
-      ) {
-        hgram[img.bitmap.data[index + 0]]++;
-      });
-      const numColors = hgram.reduce((memo, v) => {
-        return memo + (v === 0 ? 0 : 1);
-      }, 0);
-      let dark = null;
-      let light = null;
-      if (numColors === 2) {
-        dark = hgram.findIndex(x => x !== 0);
-        light = hgram.length - hgram.reverse().find(x => x !== 0);
+Jimp.create((128 * 3), (1 * 5), 0x000000FF).then(img => {
+  for (let i = 0; i < ASCII_TO_ARRAY.length; i++) {
+    let char = ASCII_TO_ARRAY[i];
+    let x_start = i * 3;
+    let y_start = 0;
+    if (char != null) {
+      for (let j = 0; j < char.length; j++) {
+        img.setPixelColor(char[j] == 1 ? 0xFFFFFFFF : 0x000000FF, x_start + (j % 3), y_start + Math.floor(j / 3));
       }
-      const retval: ImageSearchResult = {
-        imagePath,
-        parsisLine: img,
-        image: j,
-        numColors,
-        dark,
-        light
-      };
-      return retval;
-    })
-    .catch(e => {
-      console.error(e);
-      return null;
-    });
-});
+    }
+  }
 
-Promise.all(promises)
-  .then(results => {
-    const OccuranceMap: Map<string, number> = new Map();
-    results = results.filter(x => x !== null);
-    const noctisImages = results.filter(r => r.numColors === 2);
-    const notNoctisImages = results.filter(r => r.numColors !== 2); // not usable noctis images with parsis line
-    console.log(
-      `Found ${noctisImages.length} Noctis images with status line (${notNoctisImages.length} non-noctis or without statusline)`
-    );
-    noctisImages.forEach(ni => {
-      const line = [];
-      for (let x = 0; x < ni.parsisLine.bitmap.width - 3; x = x + 4) {
-        const character = ni.parsisLine.clone().crop(x, 0, 3, 5);
-        const c = getCharacterFromImg(character, ni.dark, ni.light);
-        if (c !== null) {
-          line.push(c);
-        }
-      }
-      let str = line.join("");
-      str = str
-        .replace(/L0CATI0N/gi, "LOCATION")
-        .replace(/PAR5I5/gi, "PARSIS")
-        .replace(/0F/gi, "OF")
-        .replace(/5TAR/gi, "STAR")
-        .replace(/5\°/gi, "S°")
-        .replace(/M00N/gi, "MOON");
-
-      const parsis = str.match(
-        /LOCATION PARSIS\: ([0-9-]*)\;([0-9-]*)\;([0-9-]*)/
-      );
-      if (parsis !== null) {
-        const starCoords = {
-          x: parseInt(parsis[1]),
-          y: -parseInt(parsis[2]),
-          z: parseInt(parsis[3])
-        };
-        const id = Starmap.getIDForStarCoordinates(
-          starCoords.x,
-          starCoords.y,
-          starCoords.z
-        );
-        const star = Starmap.getStarByID(id, 0.001);
-        if (star !== undefined) {
-          OccuranceMap.set(star.name, (OccuranceMap.get(star.name) || 0) + 1);
-          /*const entries = Starmap.getGuideEntriesForStar(star.object_id);
-          if (entries.length > 0 || star !== undefined) {
-            console.log(str);
-            console.log(id);
-            console.log(star);
-            //console.log(entries);
-          }*/
-        }
-      }
-    });
-    const VegaData = {
-      $schema: "https://vega.github.io/schema/vega-lite/v4.json",
-      description: "A simple bar chart with embedded data.",
-      title:
-        "Number of pictures uploaded to 0x44.com per solar system in the Noctis universe",
-      data: {
-        values: Array.from(OccuranceMap.entries()).map(
-          ([starname, pictures]) => {
-            const retval = {
-              starname: starname,
-              pictures: pictures
-            };
-            return retval;
-          }
-        )
-      },
-      background: "white",
-      mark: "bar",
-      encoding: {
-        x: {
-          field: "starname",
-          type: "ordinal",
-          title: "Solar system (star name)",
-          sort: "-y"
-        },
-        y: { field: "pictures", type: "quantitative" }
-      }
-    };
-    var view = new vega.View(
-      vega.parse(vegaLite.compile(VegaData as any, { config: {} }).spec)
-    )
-      .renderer("canvas")
-      .initialize();
-
-    // generate static PNG file from chart
-    return view.toCanvas().then(function(canvas: any) {
-      const out = createWriteStream(
-        __dirname + "/analysis/pictures_starnames_histogram.png"
-      );
-      const stream = canvas.createPNGStream();
-      stream.pipe(out);
-    });
-  })
-  .catch(console.error);
+  return img.writeAsync("./charmap_export/charmap.png");
+}).then(o => {
+  console.log("Done! NOTE: image does not contain any pixels with alpha transparency, and it doesn't contain all Noctis IV characters! You'll have to alter it manually in post using an image editing tool!");
+}).catch(e => console.error(e));
