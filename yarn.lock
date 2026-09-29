@@ -300,8 +300,8 @@ bmp-js@^0.1.0:
   resolved "https://registry.yarnpkg.com/bmp-js/-/bmp-js-0.1.0.tgz#e05a63f796a6c1ff25f4771ec7adadc148c07233"
 
 brace-expansion@^1.1.7:
-  version "1.1.11"
-  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.11.tgz#3c7fcbf529d87226f3d2f52b966ff5271eb441dd"
+  version "1.1.21"
+  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.21.tgz#edf4fab5c64d051aea5a8def49aba1c7522279f3"
   dependencies:
     balanced-match "^1.0.0"
     concat-map "0.0.1"
@@ -826,9 +826,9 @@ noctis-starmap@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/noctis-starmap/-/noctis-starmap-1.0.2.tgz#157fd8a41dc03f38844fafaff2db228339105e8d"
 
-node-fetch@^2.6.0:
-  version "2.6.7"
-  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.7.tgz#24de9fba827e3b4ae44dc8b20256a379160052ad"
+node-fetch@^2.6.1:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.7.0.tgz#d0f0fa6e3e2dc1d27efcd8ad99d550bda94d187d"
   dependencies:
     whatwg-url "^5.0.0"
 
